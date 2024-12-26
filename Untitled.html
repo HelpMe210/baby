@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Great Baby Guessing Game</title>
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" 
+    rel="stylesheet" 
+  />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase v8 (No import/export) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    :root {
+      --color-bg: #f9fafb;
+      --color-primary: #ffadc6;
+      --color-secondary: #a3d8f4;
+      --color-grey: #cccccc;
+      --color-text: #333;
+      --radius: 12px;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0; 
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: linear-gradient(120deg, var(--color-primary) 35%, var(--color-secondary) 100%);
+      color: #fff;
+      border-bottom-left-radius: var(--radius);
+      border-bottom-right-radius: var(--radius);
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-weight: 700; 
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    header p {
+      font-size: 1rem; 
+      max-width: 600px; 
+      margin: 0.5rem auto;
+    }
+    .credits { 
+      font-size: 0.85rem; 
+      opacity: 0.8; 
+      margin-top: 0.5rem; 
+    }
+
+    .container {
+      width: 90%; 
+      max-width: 900px; 
+      margin: 0 auto 3rem auto;
+    }
+    .stats-rules {
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 2rem; 
+      margin-bottom: 2rem;
+    }
+    .stats, .rules {
+      flex: 1 1 280px;
+      background: #fff;
+      padding: 1.5rem; 
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .stats h2, .rules h2 {
+      margin-bottom: 1rem; 
+      font-weight: 600; 
+      font-size: 1.2rem;
+    }
+    .stats p, .rules p {
+      line-height: 1.6; 
+      margin-bottom: 0.5rem;
+    }
+    .countdown-container {
+      text-align: center; 
+      margin: 1rem auto 2rem auto;
+      font-weight: 600; 
+      color: var(--color-primary);
+    }
+
+    /* Bet Form */
+    .bet-form {
+      background: #fff; 
+      padding: 1.5rem; 
+      border-radius: var(--radius);
+      margin-bottom: 2rem; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .bet-form h2 { 
+      margin-bottom: 1rem; 
+      font-weight: 600; 
+    }
+    .form-group {
+      display: flex; 
+      flex-direction: column; 
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      margin-bottom: 0.5rem; 
+      font-weight: 500;
+    }
+    .form-group input {
+      padding: 0.75rem; 
+      font-size: 1rem;
+      border: 1px solid #ccc; 
+      border-radius: var(--radius); 
+      outline: none;
+    }
+    .radio-group {
+      display: flex; 
+      gap: 1rem; 
+      margin-bottom: 1rem;
+    }
+    .radio-option {
+      display: flex; 
+      align-items: center; 
+      cursor: pointer;
+    }
+    .radio-option input { 
+      margin-right: 0.4rem; 
+      cursor: pointer; 
+    }
+    .submit-btn {
+      padding: 0.75rem 1.5rem; 
+      background: var(--color-primary);
+      color: #fff; 
+      border: none; 
+      border-radius: var(--radius);
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: background 0.3s;
+      margin-top: 1rem;
+    }
+    .submit-btn:hover { 
+      background: #ff92b3; 
+    }
+    .live-totals {
+      margin-top: 1rem; 
+      font-weight: 500; 
+      color: var(--color-primary);
+    }
+    .live-totals p { 
+      margin: 0.25rem 0; 
+    }
+
+    /* Picks Table */
+    table {
+      width: 100%; 
+      border-collapse: collapse; 
+      background: #fff;
+      overflow: hidden; 
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    table thead { 
+      background-color: #f0f0f0; 
+    }
+    table th, table td {
+      padding: 0.75rem 1rem; 
+      text-align: left; 
+      border-bottom: 1px solid #eee;
+    }
+    table th { 
+      font-weight: 600; 
+    }
+    table tbody tr:last-child td { 
+      border-bottom: none; 
+    }
+
+    /* Chart Container */
+    .chart-container {
+      margin: 2rem auto; 
+      max-width: 400px;
+    }
+
+    /* Admin Panel */
+    .admin-panel {
+      background: #fff; 
+      padding: 1.5rem; 
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+    .admin-panel h2 { 
+      margin-bottom: 1rem; 
+      font-weight: 600; 
+    }
+    .admin-bet-list table {
+      margin-top: 1rem; 
+      width: 100%;
+      border-collapse: collapse; 
+      background: #fff;
+      border-radius: var(--radius);
+    }
+    .admin-bet-list th, .admin-bet-list td {
+      border-bottom: 1px solid #eee;
+      padding: 0.5rem 0.75rem;
+    }
+    .admin-actions {
+      display: flex; 
+      gap: 0.5rem;
+    }
+    .admin-btn {
+      padding: 0.25rem 0.5rem; 
+      border: none; 
+      border-radius: var(--radius);
+      cursor: pointer; 
+      background: var(--color-secondary); 
+      color: #fff;
+    }
+    .admin-btn:hover { 
+      opacity: 0.9; 
+    }
+
+    footer {
+      text-align: center; 
+      padding: 1rem; 
+      font-size: 0.9rem; 
+      color: #777;
+    }
+
+    @media (max-width: 600px) {
+      .stats-rules { flex-direction: column; }
+      table th, table td { font-size: 0.9rem; }
+      .chart-container { max-width: 100%; }
+      .radio-group { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>The Great Baby Guessing Game</h1>
+    <p>
+      This pool is primarily to show our love and <strong>support</strong> for the new parents.  
+      Place your bet (min $20) on Boy or Girl, and you can add a birth date guess for a Pi Shnayim (extra portion) if correct!
+    </p>
+    <p class="credits">Built by Reuven Sash and ChatGPT</p>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Stats & Explanation -->
+    <div class="stats-rules">
+      <!-- Stats -->
+      <div class="stats">
+        <h2>Current Pool</h2>
+        <p><strong>Total Bets Collected:</strong> $<span id="total-pool">0</span></p>
+        <p><strong>Total Participants:</strong> <span id="total-participants">0</span></p>
+        <p><strong>People Who Said Boy:</strong> <span id="boy-count">0</span></p>
+        <p><strong>People Who Said Girl:</strong> <span id="girl-count">0</span></p>
+
+        <!-- Chart -->
+        <div class="chart-container">
+          <canvas id="genderChart"></canvas>
+        </div>
+      </div>
+
+      <!-- How It Works (Old text with clarifications) -->
+      <div class="rules">
+        <h2>How It Works</h2>
+        <p><strong>1.</strong> Pick a side: Boy or Girl.</p>
+        <p><strong>2.</strong> Enter your bet amount (minimum $20). This is primarily a fun way to support the new parents.</p>
+        <p><strong>3.</strong> Half of all bets go to the parents; the other half is shared by correct guessers, proportional to how much they bet on the winning side.</p>
+        <p><strong>4.</strong> <em>Pi Shnayim</em> (Extra Portion): If you guess the birth date <em>and</em> the correct gender, you get an additional portion.  
+           (So effectively your share is 1 portion + 1 more portion = “double.”)</p>
+        <p><strong>5.</strong> Example Calculation:</p>
+        <p style="margin-left:1rem;">
+          - Suppose at the end we collected $2,000 total.<br/>
+          - $1,000 goes to the parents, $1,000 to the winners.<br/>
+          - If $400 was bet on the correct gender side, and you bet $50 of that $400,  
+            that's 12.5% of the winning side's bets.<br/>
+          - So you'd earn 12.5% of $1,000 = $125. If you also guessed the date, you get an additional portion,  
+            bringing your total to $250 (Pi Shnayim).
+        </p>
+        <p><strong>6.</strong> All bets are final, no disputes allowed. Bets close on <em>February 1, 2025</em> at 11:59 PM. Good luck!</p>
+      </div>
+    </div>
+
+    <!-- Countdown -->
+    <div class="countdown-container">
+      <p>Time remaining until bets close on February 1, 2025 at 11:59 PM:</p>
+      <p id="countdown-timer">Calculating...</p>
+    </div>
+
+    <!-- Bet Form -->
+    <div class="bet-form">
+      <h2>Place Your Bet</h2>
+      <form id="betForm">
+        <div class="form-group">
+          <label for="name">Name (or Nickname)</label>
+          <input type="text" id="name" name="name" required placeholder="e.g., John Doe" />
+        </div>
+        <div class="form-group">
+          <label for="amount">Bet Amount (USD)</label>
+          <input 
+            type="number" 
+            id="amount" 
+            name="amount" 
+            min="20" 
+            step="0.01" 
+            required 
+            placeholder="50" 
+          />
+        </div>
+
+        <label>Gender Pick</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="genderPick" value="Boy" required />
+            Boy
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="genderPick" value="Girl" />
+            Girl
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="dateGuess">
+            Birth Date Guess? (+$5) 
+            <small>(Only pays if you guessed the correct gender, awarding an extra share!)</small>
+          </label>
+          <input 
+            type="date" 
+            id="dateGuess" 
+            name="dateGuess"
+            min="2025-01-01"
+            max="2025-12-31"
+          />
+        </div>
+
+        <!-- Checkbox for final disclaimers -->
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="finalDisclaimer" required />
+            I understand all bets are final and no disputes will be considered, as this is a family game.
+          </label>
+        </div>
+
+        <!-- Live totals & potential winnings -->
+        <div class="live-totals">
+          <p>Your total bet: $<span id="live-total-value">0.00</span></p>
+          <p>Your potential winnings (if correct): $<span id="live-potential-value">0.00</span></p>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit Bet</button>
+      </form>
+    </div>
+
+    <!-- Table of Bets -->
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Bet Amount</th>
+          <th>Gender Pick</th>
+          <th>Date Guess</th>
+          <th>Total Paid</th>
+          <th>Paid?</th>
+        </tr>
+      </thead>
+      <tbody id="picksTableBody">
+      </tbody>
+    </table>
+
+    <!-- Admin Panel (append ?admin=true to URL) -->
+    <div class="admin-panel" id="adminPanel" style="display:none;">
+      <h2>Admin Panel</h2>
+      <p>Approve bets (mark as paid) or delete them. Real-time for all users.</p>
+      <div class="admin-bet-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Bet</th>
+              <th>Gender</th>
+              <th>Date Guess</th>
+              <th>Total Paid</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminBetsTbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /container -->
+
+  <footer>
+    © 2025 Reuven Sash, Good Luck, and thank you for supporting the new parents!
+  </footer>
+
+  <script>
+    /************************************
+     * Firebase Config (v8 style)
+     ************************************/
+    var firebaseConfig = {
+      apiKey: "AIzaSyDNYNStbnXis73PQDNk9zZ0G6yK8f3HhgY",
+      authDomain: "baby-game-90c32.firebaseapp.com",
+      databaseURL: "https://baby-game-90c32-default-rtdb.firebaseio.com",
+      projectId: "baby-game-90c32",
+      storageBucket: "baby-game-90c32.firebasestorage.app",
+      messagingSenderId: "530861884153",
+      appId: "1:530861884153:web:04cdf4d78d1ac961949828"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.firestore();
+
+    /************************************
+     * HTML Refs
+     ************************************/
+    const betForm           = document.getElementById('betForm');
+    const picksTableBody    = document.getElementById('picksTableBody');
+    const totalPoolEl       = document.getElementById('total-pool');
+    const totalParticipantsEl = document.getElementById('total-participants');
+    const boyCountEl        = document.getElementById('boy-count');
+    const girlCountEl       = document.getElementById('girl-count');
+
+    const liveTotalValue    = document.getElementById('live-total-value');
+    const livePotentialValue= document.getElementById('live-potential-value');
+
+    const amountEl          = document.getElementById('amount');
+    const dateGuessEl       = document.getElementById('dateGuess');
+    const finalDisclaimer   = document.getElementById('finalDisclaimer');
+
+    const countdownEl       = document.getElementById('countdown-timer');
+    const adminPanel        = document.getElementById('adminPanel');
+    const adminBetsTbody    = document.getElementById('adminBetsTbody');
+
+    // We'll track local picks data for sums
+    let picksData = [];
+    let totalPool = 0;
+    let boyCount  = 0;
+    let girlCount = 0;
+
+    // Chart
+    let genderChart;
+    const chartCtx = document.getElementById('genderChart').getContext('2d');
+    let chartData = {
+      labels: ['Boy','Girl'],
+      datasets: [{
+        label: 'People',
+        data: [0,0],
+        backgroundColor: ['#a3d8f4','#ffadc6'],
+        hoverOffset: 4
+      }]
+    };
+    let chartConfig = {
+      type: 'pie',
+      data: chartData,
+      options: {
+        responsive:true,
+        plugins:{ legend:{ position:'bottom' } }
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize chart
+      genderChart = new Chart(chartCtx, chartConfig);
+
+      // Start countdown
+      startCountdown('Feb 1, 2025 23:59:59');
+
+      // Radio changes
+      document.querySelectorAll('input[name="genderPick"]').forEach(radio => {
+        radio.addEventListener('change', updateLivePotential);
+      });
+
+      // Bet form changes
+      amountEl.addEventListener('input', () => {
+        updateLiveTotal();
+        updateLivePotential();
+      });
+      dateGuessEl.addEventListener('input',() => {
+        updateLiveTotal();
+        updateLivePotential();
+      });
+
+      // Real-time snapshot from Firestore
+      db.collection('bets').orderBy('name').onSnapshot(snapshot => {
+        picksData = [];
+        snapshot.forEach(doc => {
+          let data = doc.data();
+          data.id = doc.id; // store doc ID for admin usage
+          picksData.push(data);
+        });
+        recomputeStats();
+        updatePublicUI();
+        updateChartUI();
+        updateAdminUI();
+      });
+
+      // Check if admin
+      const urlParams = new URLSearchParams(window.location.search);
+      if(urlParams.has('admin')){
+        adminPanel.style.display = 'block';
+      }
+    });
+
+    /************************************
+     * Form Submit
+     ************************************/
+    betForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Must check finalDisclaimer
+      if(!finalDisclaimer.checked){
+        alert('Please confirm the final disclaimer before submitting.');
+        return;
+      }
+
+      // If countdown is done
+      if(countdownEl.textContent==='Betting Closed'){
+        alert('Betting is already closed!');
+        return;
+      }
+      const name       = document.getElementById('name').value.trim();
+      const amountVal  = parseFloat(amountEl.value);
+      const selectedRadio = document.querySelector('input[name="genderPick"]:checked');
+      if(!selectedRadio){
+        alert('Please select Boy or Girl');
+        return;
+      }
+      const genderPick = selectedRadio.value;
+      const dateGuess  = dateGuessEl.value;
+
+      let totalPaid = amountVal;
+      if(dateGuess){ totalPaid +=5; }
+
+      // Firestore doc
+      try{
+        await db.collection('bets').add({
+          name: name,
+          amount: amountVal,
+          genderPick: genderPick,
+          dateGuess: dateGuess || '',
+          totalPaid: totalPaid,
+          paid: false
+        });
+      }catch(err){
+        console.error('Bet add error:',err);
+        alert('Could not add bet. See console.');
+      }
+
+      betForm.reset();
+      liveTotalValue.textContent='0.00';
+      livePotentialValue.textContent='0.00';
+    });
+
+    /************************************
+     * Recompute Stats
+     ************************************/
+    function recomputeStats(){
+      totalPool = 0;
+      boyCount  = 0;
+      girlCount = 0;
+      picksData.forEach(pick=>{
+        totalPool += pick.totalPaid;
+        if(pick.genderPick==='Boy') boyCount++;
+        if(pick.genderPick==='Girl') girlCount++;
+      });
+    }
+
+    /************************************
+     * Public UI
+     ************************************/
+    function updatePublicUI(){
+      // Stats
+      totalPoolEl.textContent = totalPool.toFixed(2);
+      totalParticipantsEl.textContent = picksData.length;
+      boyCountEl.textContent  = boyCount;
+      girlCountEl.textContent = girlCount;
+
+      // Table
+      picksTableBody.innerHTML='';
+      picksData.forEach(pick=>{
+        let tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${pick.name}</td>
+          <td>$${pick.amount.toFixed(2)}</td>
+          <td>${pick.genderPick}</td>
+          <td>${pick.dateGuess||'—'}</td>
+          <td>$${pick.totalPaid.toFixed(2)}</td>
+          <td>${pick.paid?'Yes':'No'}</td>
+        `;
+        picksTableBody.appendChild(tr);
+      });
+    }
+
+    function updateChartUI(){
+      genderChart.destroy();
+      let totalVotes = boyCount + girlCount;
+      if(totalVotes===0){
+        // Grey circle
+        chartConfig.data={
+          labels:['No Bets Yet'],
+          datasets:[{
+            label:'No Votes',
+            data:[1],
+            backgroundColor:['var(--color-grey)']
+          }]
+        };
+      } else {
+        chartConfig.data={
+          labels:['Boy','Girl'],
+          datasets:[{
+            label:'People',
+            data:[boyCount,girlCount],
+            backgroundColor:['#a3d8f4','#ffadc6'],
+            hoverOffset:4
+          }]
+        };
+      }
+      genderChart=new Chart(chartCtx, chartConfig);
+    }
+
+    /************************************
+     * Admin UI
+     ************************************/
+    function updateAdminUI(){
+      if(adminPanel.style.display==='none') return;
+      adminBetsTbody.innerHTML='';
+
+      picksData.forEach(pick=>{
+        let tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${pick.name}</td>
+          <td>$${pick.amount.toFixed(2)}</td>
+          <td>${pick.genderPick}</td>
+          <td>${pick.dateGuess||'—'}</td>
+          <td>$${pick.totalPaid.toFixed(2)}</td>
+          <td class="admin-actions">
+            <button class="admin-btn" data-action="approve" data-id="${pick.id}">
+              ${pick.paid?'Unapprove':'Approve'}
+            </button>
+            <button class="admin-btn" data-action="delete" data-id="${pick.id}">
+              Delete
+            </button>
+          </td>
+        `;
+        adminBetsTbody.appendChild(tr);
+      });
+
+      adminBetsTbody.querySelectorAll('.admin-btn').forEach(btn=>{
+        btn.addEventListener('click', onAdminAction);
+      });
+    }
+    async function onAdminAction(e){
+      let btn=e.target;
+      let action=btn.getAttribute('data-action');
+      let docId=btn.getAttribute('data-id');
+      if(!docId) return;
+
+      if(action==='approve'){
+        let pick=picksData.find(x=>x.id===docId);
+        if(!pick)return;
+        let newPaid=!pick.paid;
+        try{
+          await db.collection('bets').doc(docId).update({paid:newPaid});
+        }catch(err){
+          console.error('Approve error:',err);
+          alert('Failed to update doc');
+        }
+      } else if(action==='delete'){
+        let conf=confirm('Delete this bet? Cannot be undone.');
+        if(!conf)return;
+        try{
+          await db.collection('bets').doc(docId).delete();
+        }catch(err){
+          console.error('Delete error:',err);
+          alert('Failed to delete doc');
+        }
+      }
+    }
+
+    /************************************
+     * Live Totals & Potential
+     ************************************/
+    function updateLiveTotal(){
+      let val = parseFloat(amountEl.value)||0;
+      if(dateGuessEl.value) val+=5;
+      liveTotalValue.textContent=val.toFixed(2);
+    }
+
+    /*
+      We'll do a local scenario:
+        - $2,000 total => $1,000 to parents => $1,000 to winners.
+        - If the user contributed 12.5% of the winning side, they'd get $125. 
+        - If date guess is correct as well => +1 portion => $250. 
+      We'll just demonstrate that fraction * 1000, then times 2 if date guess. 
+    */
+    function updateLivePotential(){
+      let currentBet = parseFloat(amountEl.value)||0;
+      let hasDateGuess = !!dateGuessEl.value;
+
+      let selectedRadio = document.querySelector('input[name="genderPick"]:checked');
+      if(!selectedRadio){
+        livePotentialValue.textContent='0.00';
+        return;
+      }
+
+      // Hard-coded scenario: sideSum=400 => fraction = currentBet/400
+      // winners pot = 1000 => base = fraction * 1000
+      // if date => +1 portion => *2 
+      let sideSum=400;
+      let fraction=currentBet/sideSum;
+      if(fraction<0) fraction=0;
+
+      let winnersPot=1000;
+      let share=fraction*winnersPot;
+      if(hasDateGuess) share*=2;
+
+      livePotentialValue.textContent=share.toFixed(2);
+    }
+
+    /************************************
+     * Countdown
+     ************************************/
+    function startCountdown(deadlineStr){
+      let deadline=new Date(deadlineStr).getTime();
+      function updateTimer(){
+        let now=Date.now();
+        let distance=deadline-now;
+        if(distance<0){
+          countdownEl.textContent='Betting Closed';
+          return;
+        }
+        let days=Math.floor(distance/(1000*60*60*24));
+        let hours=Math.floor((distance%(1000*60*60*24))/(1000*60*60));
+        let minutes=Math.floor((distance%(1000*60*60))/(1000*60));
+        let seconds=Math.floor((distance%(1000*60))/1000);
+        countdownEl.textContent=`${days}d ${hours}h ${minutes}m ${seconds}s`;
+      }
+      updateTimer();
+      setInterval(updateTimer,1000);
+    }
+  </script>
+</body>
+</html>
