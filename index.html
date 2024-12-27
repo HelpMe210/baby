@@ -395,20 +395,39 @@
           </label>
         </div>
 
-        <!-- Date Guess -->
-        <div class="form-group">
-          <label for="dateGuess">Birth Date Guess? (+$5)</label>
-          <input 
+        <style>
+  /* Hide the date parts initially */
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-year-field {
+    opacity: var(--field-opacity, 0);
+  }
+
+  /* Show the date parts when the class `has-value` is added */
+  input[type="date"].has-value {
+    --field-opacity: 1;
+  }
+
+  /* Optional: Add custom styling for the displayed formatted date */
+  #dateDisplay {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #555;
+  }
+</style>
+
+<div class="form-group">
+  <label for="dateGuess">Birth Date Guess? (+$5)</label>
+  <input 
     type="date" 
-  id="dateGuess" 
-  name="dateGuess" 
-  min="2025-01-01" 
-  max="2025-12-31" 
-  placeholder="YYYY-MM-DD" 
-  required 
-  onfocus="this.value = this.value || '2025-02-01';"
-/>
-        </div>
+    id="dateGuess" 
+    name="dateGuess" 
+    min="2025-01-01" 
+    max="2025-12-31" 
+    required
+  />
+  <div id="dateDisplay"></div>
+</div>
 
         <!-- Optional Baby Message -->
         <div class="form-group">
@@ -532,6 +551,37 @@
     const totalParticipantsEl= document.getElementById('total-participants');
     const boyCountEl         = document.getElementById('boy-count');
     const girlCountEl        = document.getElementById('girl-count');
+    const dateInput = document.getElementById('dateGuess');
+const dateDisplay = document.getElementById('dateDisplay');
+
+// Set default calendar view to February 2025 when the field is focused
+dateInput.addEventListener('focus', () => {
+  if (!dateInput.value) {
+    dateInput.value = '2025-02-01'; // Temporarily set default to February 1, 2025
+  }
+});
+
+// Update the displayed formatted date when a value is selected
+dateInput.addEventListener('change', () => {
+  if (dateInput.value) {
+    const selectedDate = new Date(dateInput.value);
+    const options = { month: 'short', day: 'numeric' }; // Format: "Feb 23"
+    dateDisplay.textContent = selectedDate.toLocaleDateString('en-US', options);
+    dateInput.classList.add('has-value'); // Apply styling to show the date parts
+  } else {
+    dateDisplay.textContent = '';
+    dateInput.classList.remove('has-value'); // Hide the date parts
+  }
+});
+
+// Clear the temporary default if no selection is made
+dateInput.addEventListener('blur', () => {
+  if (dateInput.value === '2025-02-01') {
+    dateInput.value = ''; // Clear the default
+    dateDisplay.textContent = ''; // Clear the display
+    dateInput.classList.remove('has-value'); // Ensure styling is reset
+  }
+});
 
     const liveTotalValue     = document.getElementById('live-total-value');
     const livePotentialGender= document.getElementById('live-potential-gender');
