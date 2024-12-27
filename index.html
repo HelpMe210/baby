@@ -399,12 +399,14 @@
         <div class="form-group">
           <label for="dateGuess">Birth Date Guess? (+$5)</label>
           <input 
-  type="date" 
+    type="date" 
   id="dateGuess" 
   name="dateGuess" 
   min="2025-01-01" 
-  max="2025-03-31"
-  required
+  max="2025-12-31" 
+  placeholder="YYYY-MM-DD" 
+  required 
+  onfocus="this.value = this.value || '2025-02-01';"
 />
         </div>
 
@@ -589,10 +591,6 @@
         updateLiveTotal();
         updateLivePotential();
       });
-      document.getElementById('dateGuess').addEventListener('focus', function () {
-  this.value = '2025-02-01'; // Set default view to February 2025
-  this.value = '';           // Clear the value so nothing shows in the input box
-});
       dateGuessEl.addEventListener('input',() => {
         updateLiveTotal();
         updateLivePotential();
