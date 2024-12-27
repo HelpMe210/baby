@@ -15,7 +15,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase v8 (No import/export) -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
@@ -30,8 +30,7 @@
     }
     * {
       box-sizing: border-box;
-      margin: 0; 
-      padding: 0;
+      margin: 0; padding: 0;
       font-family: 'Poppins', sans-serif;
     }
     body {
@@ -122,7 +121,7 @@
       margin-bottom: 0.5rem; 
       font-weight: 500;
     }
-    .form-group input {
+    .form-group input, .form-group select {
       padding: 0.75rem; 
       font-size: 1rem;
       border: 1px solid #ccc; 
@@ -165,6 +164,29 @@
     .live-totals p { 
       margin: 0.25rem 0; 
     }
+
+    /* Payment instructions */
+    .payment-info {
+      margin-top: 0.5rem; 
+      padding: 0.5rem; 
+      background: #f7f7f7; 
+      border-radius: var(--radius);
+      display: none;
+      font-size: 0.9rem;
+    }
+    .payment-info p { margin: 0.25rem 0; }
+    .copy-btn {
+      display: inline-block; 
+      padding: 0.3rem 0.5rem; 
+      background: var(--color-secondary);
+      color: #fff; 
+      border: none; 
+      border-radius: var(--radius); 
+      cursor: pointer; 
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    }
+    .copy-btn:hover { opacity: 0.9; }
 
     /* Picks Table */
     table {
@@ -255,8 +277,11 @@
   <header>
     <h1>The Great Baby Guessing Game</h1>
     <p>
-      This pool is primarily to show our love and <strong>support</strong> for the new parents.  
-      Place your bet (min $20) on Boy or Girl, and you can add a birth date guess for a Pi Shnayim (extra portion) if correct!
+      Make your guess on whether the baby will be a Boy or a Girl,  
+      support the new parents, and earn double if you guess the birthdate too!
+    </p>
+    <p>
+      This pool is primarily to show our love and support for the new parents.
     </p>
     <p class="credits">Built by Reuven Sash and ChatGPT</p>
   </header>
@@ -279,24 +304,23 @@
         </div>
       </div>
 
-      <!-- How It Works (Old text with clarifications) -->
+      <!-- Rules & Explanation -->
       <div class="rules">
         <h2>How It Works</h2>
         <p><strong>1.</strong> Pick a side: Boy or Girl.</p>
-        <p><strong>2.</strong> Enter your bet amount (minimum $20). This is primarily a fun way to support the new parents.</p>
-        <p><strong>3.</strong> Half of all bets go to the parents; the other half is shared by correct guessers, proportional to how much they bet on the winning side.</p>
-        <p><strong>4.</strong> <em>Pi Shnayim</em> (Extra Portion): If you guess the birth date <em>and</em> the correct gender, you get an additional portion.  
-           (So effectively your share is 1 portion + 1 more portion = “double.”)</p>
-        <p><strong>5.</strong> Example Calculation:</p>
+        <p><strong>2.</strong> Enter your bet amount (minimum $20). All bets go partly towards <em>baby necessities</em>.</p>
+        <p><strong>3.</strong> Half of the total bets will be used for baby necessities; the other half is divided proportionally among those who guessed correctly.</p>
+        <p><strong>4.</strong> Optional Birth Date Guess (+$5): If you guess the exact date <em>and</em> the correct gender, you get Pi Shnayim (Double Portion).  
+           That means you don’t just get one share of the winners’ pot—you get two shares.</p>
+        <p><strong>5.</strong> Example of Potential Winnings:</p>
         <p style="margin-left:1rem;">
-          - Suppose at the end we collected $2,000 total.<br/>
-          - $1,000 goes to the parents, $1,000 to the winners.<br/>
-          - If $400 was bet on the correct gender side, and you bet $50 of that $400,  
-            that's 12.5% of the winning side's bets.<br/>
-          - So you'd earn 12.5% of $1,000 = $125. If you also guessed the date, you get an additional portion,  
-            bringing your total to $250 (Pi Shnayim).
+          - Suppose at the end we collect $2,000 total.  
+          - $1,000 goes toward baby necessities, $1,000 for the winners.<br/>
+          - If the winning side collectively bet $400, and you personally bet $50, that’s 12.5% of the winning side’s total.  
+            So you get 12.5% of $1,000 = $125.  
+          - If you also guessed the date correctly (Pi Shnayim), you get an *additional* portion, so your total is $250!
         </p>
-        <p><strong>6.</strong> All bets are final, no disputes allowed. Bets close on <em>February 1, 2025</em> at 11:59 PM. Good luck!</p>
+        <p><strong>6.</strong> Bets close on <em>February 1, 2025</em> at 11:59 PM. Good luck and have fun!</p>
       </div>
     </div>
 
@@ -323,10 +347,11 @@
             min="20" 
             step="0.01" 
             required 
-            placeholder="50" 
+            placeholder="e.g. 50.00" 
           />
         </div>
 
+        <!-- Gender Buttons -->
         <label>Gender Pick</label>
         <div class="radio-group">
           <label class="radio-option">
@@ -339,11 +364,9 @@
           </label>
         </div>
 
+        <!-- Date Guess -->
         <div class="form-group">
-          <label for="dateGuess">
-            Birth Date Guess? (+$5) 
-            <small>(Only pays if you guessed the correct gender, awarding an extra share!)</small>
-          </label>
+          <label for="dateGuess">Birth Date Guess? (+$5)</label>
           <input 
             type="date" 
             id="dateGuess" 
@@ -353,7 +376,24 @@
           />
         </div>
 
-        <!-- Checkbox for final disclaimers -->
+        <!-- Payment Method -->
+        <div class="form-group">
+          <label for="paymentMethod">How will you fund your bet?</label>
+          <select id="paymentMethod" name="paymentMethod" required>
+            <option value="">Select an option</option>
+            <option value="cash">Cash (See Reuven)</option>
+            <option value="paypal">PayPal (reubensash@gmail.com)</option>
+            <option value="zelle">Zelle (347-796-1892)</option>
+            <option value="cashapp">CashApp (347-796-1892)</option>
+            <option value="credit">Credit Card (+3% fee, see Reuven)</option>
+            <option value="venmo">Venmo (917-922-8105)</option>
+          </select>
+        </div>
+        <div class="payment-info" id="paymentInfo">
+          <!-- We will fill these instructions dynamically -->
+        </div>
+
+        <!-- Final disclaimer (family game) -->
         <div class="form-group">
           <label>
             <input type="checkbox" id="finalDisclaimer" required />
@@ -416,16 +456,15 @@
 
   <script>
     /************************************
-     * Firebase Config (v8 style)
+     * Firebase Config (v8)
      ************************************/
     var firebaseConfig = {
-      apiKey: "AIzaSyDNYNStbnXis73PQDNk9zZ0G6yK8f3HhgY",
-  authDomain: "baby-game-90c32.firebaseapp.com",
-  databaseURL: "https://baby-game-90c32-default-rtdb.firebaseio.com",
-  projectId: "baby-game-90c32",
-  storageBucket: "baby-game-90c32.firebasestorage.app",
-  messagingSenderId: "530861884153",
-  appId: "1:530861884153:web:04cdf4d78d1ac961949828"
+      apiKey: "YOUR-API-KEY",
+      authDomain: "YOUR-PROJECT-ID.firebaseapp.com",
+      projectId: "YOUR-PROJECT-ID",
+      storageBucket: "YOUR-PROJECT-ID.appspot.com",
+      messagingSenderId: "YOUR-SENDER-ID",
+      appId: "YOUR-APP-ID"
     };
     firebase.initializeApp(firebaseConfig);
     var db = firebase.firestore();
@@ -433,25 +472,26 @@
     /************************************
      * HTML Refs
      ************************************/
-    const betForm           = document.getElementById('betForm');
-    const picksTableBody    = document.getElementById('picksTableBody');
-    const totalPoolEl       = document.getElementById('total-pool');
+    const betForm         = document.getElementById('betForm');
+    const picksTableBody  = document.getElementById('picksTableBody');
+    const totalPoolEl     = document.getElementById('total-pool');
     const totalParticipantsEl = document.getElementById('total-participants');
-    const boyCountEl        = document.getElementById('boy-count');
-    const girlCountEl       = document.getElementById('girl-count');
+    const boyCountEl      = document.getElementById('boy-count');
+    const girlCountEl     = document.getElementById('girl-count');
 
-    const liveTotalValue    = document.getElementById('live-total-value');
-    const livePotentialValue= document.getElementById('live-potential-value');
+    const liveTotalValue  = document.getElementById('live-total-value');
+    const livePotentialValue = document.getElementById('live-potential-value');
 
-    const amountEl          = document.getElementById('amount');
-    const dateGuessEl       = document.getElementById('dateGuess');
-    const finalDisclaimer   = document.getElementById('finalDisclaimer');
+    const amountEl        = document.getElementById('amount');
+    const dateGuessEl     = document.getElementById('dateGuess');
+    const finalDisclaimer = document.getElementById('finalDisclaimer');
+    const paymentMethodEl = document.getElementById('paymentMethod');
+    const paymentInfoEl   = document.getElementById('paymentInfo');
 
-    const countdownEl       = document.getElementById('countdown-timer');
-    const adminPanel        = document.getElementById('adminPanel');
-    const adminBetsTbody    = document.getElementById('adminBetsTbody');
+    const countdownEl     = document.getElementById('countdown-timer');
+    const adminPanel      = document.getElementById('adminPanel');
+    const adminBetsTbody  = document.getElementById('adminBetsTbody');
 
-    // We'll track local picks data for sums
     let picksData = [];
     let totalPool = 0;
     let boyCount  = 0;
@@ -485,6 +525,9 @@
       // Start countdown
       startCountdown('Feb 1, 2025 23:59:59');
 
+      // Payment method updates
+      paymentMethodEl.addEventListener('change', updatePaymentInfo);
+
       // Radio changes
       document.querySelectorAll('input[name="genderPick"]').forEach(radio => {
         radio.addEventListener('change', updateLivePotential);
@@ -505,7 +548,7 @@
         picksData = [];
         snapshot.forEach(doc => {
           let data = doc.data();
-          data.id = doc.id; // store doc ID for admin usage
+          data.id = doc.id;
           picksData.push(data);
         });
         recomputeStats();
@@ -520,6 +563,58 @@
         adminPanel.style.display = 'block';
       }
     });
+
+    /************************************
+     * Payment Info UI
+     ************************************/
+    function updatePaymentInfo(){
+      let method = paymentMethodEl.value;
+      let instructions = '';
+      switch(method){
+        case 'cash':
+          instructions = 'Pay by Cash: See Reuven in person.';
+          break;
+        case 'paypal':
+          instructions = 'PayPal: reubensash@gmail.com';
+          break;
+        case 'zelle':
+          instructions = 'Zelle: 347-796-1892';
+          break;
+        case 'cashapp':
+          instructions = 'CashApp: 347-796-1892';
+          break;
+        case 'credit':
+          instructions = 'Credit card: +3% fee, see Reuven.';
+          break;
+        case 'venmo':
+          instructions = 'Venmo: 917-922-8105';
+          break;
+        default:
+          instructions = '';
+      }
+      if(!instructions){
+        paymentInfoEl.style.display = 'none';
+        paymentInfoEl.innerHTML = '';
+        return;
+      }
+
+      // Copy-to-clipboard button for some
+      let showClipboard = (method !== 'cash' && method !== 'credit');
+      let copyBtnHTML = showClipboard 
+        ? `<button class="copy-btn" onclick="copyToClipboard('${instructions}')">Copy</button>` 
+        : '';
+
+      paymentInfoEl.style.display = 'block';
+      paymentInfoEl.innerHTML = `
+        <p><strong>Payment Instructions:</strong></p>
+        <p>${instructions} ${copyBtnHTML}</p>
+      `;
+    }
+
+    function copyToClipboard(text){
+      navigator.clipboard.writeText(text);
+      alert(`Copied: "${text}"`);
+    }
 
     /************************************
      * Form Submit
@@ -547,6 +642,7 @@
       }
       const genderPick = selectedRadio.value;
       const dateGuess  = dateGuessEl.value;
+      const paymentMethod = paymentMethodEl.value;
 
       let totalPaid = amountVal;
       if(dateGuess){ totalPaid +=5; }
@@ -559,7 +655,8 @@
           genderPick: genderPick,
           dateGuess: dateGuess || '',
           totalPaid: totalPaid,
-          paid: false
+          paid: false,
+          paymentMethod: paymentMethod
         });
       }catch(err){
         console.error('Bet add error:',err);
@@ -567,6 +664,8 @@
       }
 
       betForm.reset();
+      paymentInfoEl.style.display = 'none';
+      paymentInfoEl.innerHTML='';
       liveTotalValue.textContent='0.00';
       livePotentialValue.textContent='0.00';
     });
@@ -707,11 +806,10 @@
     }
 
     /*
-      We'll do a local scenario:
-        - $2,000 total => $1,000 to parents => $1,000 to winners.
-        - If the user contributed 12.5% of the winning side, they'd get $125. 
-        - If date guess is correct as well => +1 portion => $250. 
-      We'll just demonstrate that fraction * 1000, then times 2 if date guess. 
+      We'll keep the same scenario: 
+      - total pot $2,000 => $1,000 for baby necessities, $1,000 for winners.
+      - if user fraction is e.g. 12.5%, they'd get $125
+      - Pi Shnayim => $250
     */
     function updateLivePotential(){
       let currentBet = parseFloat(amountEl.value)||0;
@@ -722,10 +820,9 @@
         livePotentialValue.textContent='0.00';
         return;
       }
-
-      // Hard-coded scenario: sideSum=400 => fraction = currentBet/400
-      // winners pot = 1000 => base = fraction * 1000
-      // if date => +1 portion => *2 
+      // Hard-coded example sideSum=400 => fraction = currentBet/400
+      // pot=1000 => base = fraction*1000
+      // if date => double
       let sideSum=400;
       let fraction=currentBet/sideSum;
       if(fraction<0) fraction=0;
