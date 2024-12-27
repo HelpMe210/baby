@@ -128,7 +128,7 @@
       border: 1px solid #ccc; 
       border-radius: var(--radius); 
       outline: none;
-      font-family: inherit; /* ensure consistent font */
+      font-family: inherit;
     }
     textarea { 
       resize: vertical; 
@@ -223,6 +223,8 @@
     table tbody tr:last-child td { 
       border-bottom: none; 
     }
+
+    /* Admin Panel */
     .admin-panel {
       background: #fff; 
       padding: 1.5rem; 
@@ -346,8 +348,8 @@
         <p style="margin-left:1rem;">
           - $3,000 total → $1,500 for parents, $1,500 for winners.<br/>
           - Suppose the correct side collectively wagered $400, and you contributed $50 of that $400 → 12.5% fraction.<br/>
-          - That 12.5% of $1,500 is $187.50 <strong>if you only guessed the gender</strong>.<br/>
-          - <strong>If you also guessed the birthdate correctly</strong>, you get double ($375) thanks to Pi Shnayim!
+          - That 12.5% of $1,500 is $187.50 <strong>if you only got the gender</strong>.<br/>
+          - <strong>If you also guessed the birthdate correctly</strong>, you get double: $375!
         </p>
         <p><strong>5.</strong> Wagers close on <em>February 1, 2025</em> at 11:59 PM. Good luck and have fun!</p>
       </div>
@@ -437,12 +439,18 @@
         <!-- Live totals & potential winnings -->
         <div class="live-totals">
           <p>Your total wager: $<span id="live-total-value">0.00</span></p>
-          <p>Your potential winnings (if correct): 
-            $<span id="live-potential-value">0.00</span><br/>
+          <p>Your potential winnings:  
+            <br/>
             <small>
-              This scenario is based on a <strong>$3,000 total</strong> goal: 
-              if you guess only the correct gender, you get one portion;  
-              if you also guess the birthdate, you get double that portion.
+              <strong>Gender-Only:</strong>  
+              $<span id="live-potential-gender">0.00</span>  
+              <br/>
+              <strong>Gender + Birthdate (Double):</strong>  
+              $<span id="live-potential-double">0.00</span>
+            </small>
+            <br/>
+            <small>
+              (Scenario based on a <strong>$3,000 total</strong>: $1,500 for parents, $1,500 for winners.)
             </small>
           </p>
         </div>
@@ -515,28 +523,29 @@
     /************************************
      * HTML Refs
      ************************************/
-    const betForm         = document.getElementById('betForm');
-    const picksTableBody  = document.getElementById('picksTableBody');
-    const totalPoolEl     = document.getElementById('total-pool');
-    const totalParticipantsEl = document.getElementById('total-participants');
-    const boyCountEl      = document.getElementById('boy-count');
-    const girlCountEl     = document.getElementById('girl-count');
+    const betForm            = document.getElementById('betForm');
+    const picksTableBody     = document.getElementById('picksTableBody');
+    const totalPoolEl        = document.getElementById('total-pool');
+    const totalParticipantsEl= document.getElementById('total-participants');
+    const boyCountEl         = document.getElementById('boy-count');
+    const girlCountEl        = document.getElementById('girl-count');
 
-    const liveTotalValue  = document.getElementById('live-total-value');
-    const livePotentialValue = document.getElementById('live-potential-value');
+    const liveTotalValue     = document.getElementById('live-total-value');
+    const livePotentialGender= document.getElementById('live-potential-gender');
+    const livePotentialDouble= document.getElementById('live-potential-double');
 
-    const amountEl        = document.getElementById('amount');
-    const dateGuessEl     = document.getElementById('dateGuess');
-    const finalDisclaimer = document.getElementById('finalDisclaimer');
-    const paymentMethodEl = document.getElementById('paymentMethod');
-    const paymentInfoEl   = document.getElementById('paymentInfo');
-    const babyMessageEl   = document.getElementById('babyMessage');
+    const amountEl           = document.getElementById('amount');
+    const dateGuessEl        = document.getElementById('dateGuess');
+    const finalDisclaimer    = document.getElementById('finalDisclaimer');
+    const paymentMethodEl    = document.getElementById('paymentMethod');
+    const paymentInfoEl      = document.getElementById('paymentInfo');
+    const babyMessageEl      = document.getElementById('babyMessage');
 
-    const countdownEl     = document.getElementById('countdown-timer');
-    const adminPanel      = document.getElementById('adminPanel');
-    const adminBetsTbody  = document.getElementById('adminBetsTbody');
+    const countdownEl        = document.getElementById('countdown-timer');
+    const adminPanel         = document.getElementById('adminPanel');
+    const adminBetsTbody     = document.getElementById('adminBetsTbody');
 
-    const progressBarFill = document.getElementById('progressBarFill');
+    const progressBarFill    = document.getElementById('progressBarFill');
 
     let picksData = [];
     let totalPool = 0;
@@ -607,7 +616,6 @@
       if(urlParams.has('admin')){
         adminPanel.style.display = 'block';
       } 
-      // (No "Paid?" column in the public table)
     });
 
     /************************************
@@ -721,7 +729,8 @@
       paymentInfoEl.style.display = 'none';
       paymentInfoEl.innerHTML='';
       liveTotalValue.textContent='0.00';
-      livePotentialValue.textContent='0.00';
+      livePotentialGender.textContent='0.00';
+      livePotentialDouble.textContent='0.00';
     });
 
     /************************************
@@ -869,32 +878,34 @@
     }
 
     /*
-      We'll keep a scenario:
-      - $3,000 total => $1,500 to parents, $1,500 for winners
-      - if user fraction is e.g. 12.5%, they'd get 12.5% of $1,500 => $187.50
-      - Pi Shnayim => $375 if they guess the birthdate, too
+      We'll show two values in real time:
+      - base portion (if only gender is correct)
+      - double portion (if date+gender are both correct)
+      Hard-coded sideTotal=400, winnersPot=1500 for the scenario.
     */
     function updateLivePotential(){
       let currentWager = parseFloat(amountEl.value)||0;
-      let hasDateGuess = !!dateGuessEl.value;
       let selectedRadio = document.querySelector('input[name="genderPick"]:checked');
       if(!selectedRadio){
-        livePotentialValue.textContent='0.00';
+        livePotentialGender.textContent='0.00';
+        livePotentialDouble.textContent='0.00';
         return;
       }
-      // Hard-coded example sideTotal=400 => fraction = currentWager/400
+
+      // sideTotal=400 => fraction = currentWager/400
       // winnersPot=1500 => base = fraction*1500
       let sideTotal=400;
       let fraction=currentWager/sideTotal;
       if(fraction<0) fraction=0;
       let winnersPot=1500;
-      let baseShare=fraction*winnersPot;
-      if(baseShare<0) baseShare=0;
 
-      if(hasDateGuess){
-        baseShare*=2; 
-      }
-      livePotentialValue.textContent=baseShare.toFixed(2);
+      let genderOnlyShare = fraction*winnersPot; // only correct gender
+      if(genderOnlyShare<0) genderOnlyShare=0;
+
+      let doubleShare = genderOnlyShare*2;
+
+      livePotentialGender.textContent = genderOnlyShare.toFixed(2);
+      livePotentialDouble.textContent = doubleShare.toFixed(2);
     }
 
     /************************************
