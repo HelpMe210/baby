@@ -37,7 +37,6 @@
     body {
       background: var(--color-bg);
       color: var(--color-text);
-      /* Remove horizontal scroll on mobile */
       margin: 0 auto;
       max-width: 100%;
       overflow-x: hidden;
@@ -123,13 +122,18 @@
       margin-bottom: 0.5rem; 
       font-weight: 500;
     }
-    .form-group input, .form-group select {
+    .form-group input, .form-group select, .form-group textarea {
       padding: 0.75rem; 
       font-size: 1rem;
       border: 1px solid #ccc; 
       border-radius: var(--radius); 
       outline: none;
+      font-family: inherit; /* ensure consistent font */
     }
+    textarea { 
+      resize: vertical; 
+    }
+
     .radio-group {
       display: flex; 
       gap: 1rem; 
@@ -193,7 +197,7 @@
     /* Table + Admin + Chart */
     .table-container {
       width: 100%;
-      overflow-x: auto;  /* handle wide table gracefully on mobile */
+      overflow-x: auto; 
     }
     table {
       width: 100%; 
@@ -202,7 +206,7 @@
       overflow: hidden; 
       border-radius: var(--radius);
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      min-width: 600px; /* ensure columns fit at narrower widths */
+      min-width: 600px; 
     }
     table thead { 
       background-color: #f0f0f0; 
@@ -275,7 +279,7 @@
     .progress-bar-fill {
       height: 100%;
       background: var(--color-primary);
-      width: 0%; /* dynamic */
+      width: 0%;
       text-align: right;
       line-height: 20px;
       color: #fff;
@@ -325,7 +329,7 @@
 
         <!-- Progress Bar for 3K goal -->
         <div class="progress-container">
-          <p>Goal: Raise $3,000 total (i.e., $1,500 for Naftali & Emily)</p>
+          <p>Goal: Raise $3,000 total so $1,500 can go to Naftali & Emily</p>
           <div class="progress-bar">
             <div class="progress-bar-fill" id="progressBarFill">0%</div>
           </div>
@@ -336,16 +340,16 @@
       <div class="rules">
         <h2>How It Works</h2>
         <p><strong>1.</strong> Choose Boy or Girl.</p>
-        <p><strong>2.</strong> Wager an amount (minimum $20). Half of the total wagers will be a gift to Naftali and Emily for baby necessities; the other half is divided among correct guessers.</p>
-        <p><strong>3.</strong> Optional Birth Date Guess (+$5): If you guess the exact date <em>and</em> the correct gender, you get Pi Shnayim—<em>double winning portion</em>.</p>
-        <p><strong>4.</strong> Example with $3,000 total <em>(just a goal, not guaranteed)</em>:</p>
+        <p><strong>2.</strong> Wager an amount (minimum $20). Half of the total wagers will be a gift to Naftali and Emily for baby necessities; the other half is split among guessers who got the gender correct.</p>
+        <p><strong>3.</strong> Optional Birth Date Guess (+$5): If you guess the exact date <em>and</em> the correct gender, you get Pi Shnayim—<em>double your winning portion</em>.</p>
+        <p><strong>4.</strong> Example with $3,000 total (our goal, but not guaranteed):</p>
         <p style="margin-left:1rem;">
-          - \$3,000 total: \$1,500 goes to Naftali & Emily, \$1,500 goes to the winners.<br/>
-          - If the winning side collectively wagered \$400, and you wagered \$50 of that \$400,  
-            you own 12.5% of the correct side’s total.<br/>
-          - So you get 12.5% of \$1,500 = \$187.50. If you also guessed the birthdate correctly, you get a double winning portion, so your total is \$375!
+          - $3,000 total → $1,500 for parents, $1,500 for winners.<br/>
+          - Suppose the correct side collectively wagered $400, and you contributed $50 of that $400 → 12.5% fraction.<br/>
+          - That 12.5% of $1,500 is $187.50 <strong>if you only guessed the gender</strong>.<br/>
+          - <strong>If you also guessed the birthdate correctly</strong>, you get double ($375) thanks to Pi Shnayim!
         </p>
-        <p><strong>5.</strong> Bets close on <em>February 1, 2025</em> at 11:59 PM. Good luck and have fun!</p>
+        <p><strong>5.</strong> Wagers close on <em>February 1, 2025</em> at 11:59 PM. Good luck and have fun!</p>
       </div>
     </div>
 
@@ -401,6 +405,12 @@
           />
         </div>
 
+        <!-- Optional Baby Message -->
+        <div class="form-group">
+          <label for="babyMessage">Message to the Baby (optional):</label>
+          <textarea id="babyMessage" name="babyMessage" rows="2" placeholder="Share a sweet note for the baby to read someday..."></textarea>
+        </div>
+
         <!-- Payment Method -->
         <div class="form-group">
           <label for="paymentMethod">How will you fund your wager?</label>
@@ -430,8 +440,9 @@
           <p>Your potential winnings (if correct): 
             $<span id="live-potential-value">0.00</span><br/>
             <small>
-              This is just an <em>example scenario</em> based on a hypothetical 
-              <strong>$3,000 total</strong> raised.
+              This scenario is based on a <strong>$3,000 total</strong> goal: 
+              if you guess only the correct gender, you get one portion;  
+              if you also guess the birthdate, you get double that portion.
             </small>
           </p>
         </div>
@@ -519,6 +530,7 @@
     const finalDisclaimer = document.getElementById('finalDisclaimer');
     const paymentMethodEl = document.getElementById('paymentMethod');
     const paymentInfoEl   = document.getElementById('paymentInfo');
+    const babyMessageEl   = document.getElementById('babyMessage');
 
     const countdownEl     = document.getElementById('countdown-timer');
     const adminPanel      = document.getElementById('adminPanel');
@@ -590,16 +602,12 @@
         updateAdminUI();
       });
 
-      // Admin check
+      // Check if admin
       const urlParams = new URLSearchParams(window.location.search);
       if(urlParams.has('admin')){
         adminPanel.style.display = 'block';
-      } else {
-        // Hide "Paid?" column in the public table
-        const publicTable = document.getElementById('publicTable');
-        // The last <th> was removed, so we do not see "Paid?" in public table at all.
-        // Or if we did keep it, we could hide it via CSS. But we simply didn't add it to the public table.
-      }
+      } 
+      // (No "Paid?" column in the public table)
     });
 
     /************************************
@@ -608,12 +616,12 @@
     function updatePaymentInfo(){
       let method = paymentMethodEl.value;
       let instructions = '';
-      let rawValue=''; // just the contact detail or number
+      let rawValue=''; // just the contact detail (no dashes)
 
       switch(method){
         case 'cash':
           instructions = 'Cash: See Reuven in person.';
-          rawValue = ''; 
+          rawValue='';
           break;
         case 'paypal':
           instructions = 'PayPal: reubensash@gmail.com';
@@ -629,7 +637,7 @@
           break;
         case 'credit':
           instructions = 'Credit card: +3% fee, see Reuven.';
-          rawValue=''; 
+          rawValue='';
           break;
         case 'venmo':
           instructions = 'Venmo: 9179228105';
@@ -687,6 +695,7 @@
       const genderPick = selectedRadio.value;
       const dateGuess  = dateGuessEl.value;
       const paymentMethod = paymentMethodEl.value;
+      const babyMsg    = babyMessageEl.value.trim();
 
       let totalPaid = amountVal;
       if(dateGuess){ totalPaid +=5; }
@@ -700,7 +709,8 @@
           dateGuess: dateGuess || '',
           totalPaid: totalPaid,
           paid: false,
-          paymentMethod: paymentMethod
+          paymentMethod: paymentMethod,
+          babyMessage: babyMsg
         });
       }catch(err){
         console.error('Wager add error:',err);
@@ -860,9 +870,9 @@
 
     /*
       We'll keep a scenario:
-      - $3,000 total => $1,500 to parents, $1,500 to winners
+      - $3,000 total => $1,500 to parents, $1,500 for winners
       - if user fraction is e.g. 12.5%, they'd get 12.5% of $1,500 => $187.50
-      - Pi Shnayim => $375
+      - Pi Shnayim => $375 if they guess the birthdate, too
     */
     function updateLivePotential(){
       let currentWager = parseFloat(amountEl.value)||0;
@@ -874,15 +884,17 @@
       }
       // Hard-coded example sideTotal=400 => fraction = currentWager/400
       // winnersPot=1500 => base = fraction*1500
-      // if date => double
       let sideTotal=400;
       let fraction=currentWager/sideTotal;
       if(fraction<0) fraction=0;
       let winnersPot=1500;
-      let share=fraction*winnersPot;
-      if(hasDateGuess) share*=2;
+      let baseShare=fraction*winnersPot;
+      if(baseShare<0) baseShare=0;
 
-      livePotentialValue.textContent=share.toFixed(2);
+      if(hasDateGuess){
+        baseShare*=2; 
+      }
+      livePotentialValue.textContent=baseShare.toFixed(2);
     }
 
     /************************************
