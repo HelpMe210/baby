@@ -396,24 +396,18 @@
         </div>
 
         <style>
-  /* Hide the date parts initially */
-  input[type="date"]::-webkit-datetime-edit-day-field,
-  input[type="date"]::-webkit-datetime-edit-month-field,
+  /* Attempt to hide only the year portion in WebKit browsers */
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+    display: inline-flex; /* Keep day and month on the same line */
+  }
+  /* Hide the year field */
   input[type="date"]::-webkit-datetime-edit-year-field {
-    opacity: var(--field-opacity, 0);
+    display: none;
   }
-
-  /* Show the date parts when the class `has-value` is added */
-  input[type="date"].has-value {
-    --field-opacity: 1;
-  }
-
-  /* Optional: Add custom styling for the displayed formatted date */
-  #dateDisplay {
-    margin-top: 5px;
-    font-size: 0.9em;
-    color: #555;
-  }
+  /* Optional: show a slash or space if you want to separate them */
+  /* input[type="date"]::-webkit-datetime-edit-text {
+    content: "/";
+  } */
 </style>
 
 <div class="form-group">
@@ -423,10 +417,11 @@
     id="dateGuess" 
     name="dateGuess" 
     min="2025-01-01" 
-    max="2025-12-31" 
+    max="2025-12-31"
+    placeholder="YYYY-MM-DD"
     required
+    onfocus="defaultToFeb2025()"
   />
-  <div id="dateDisplay"></div>
 </div>
 
         <!-- Optional Baby Message -->
@@ -551,37 +546,22 @@
     const totalParticipantsEl= document.getElementById('total-participants');
     const boyCountEl         = document.getElementById('boy-count');
     const girlCountEl        = document.getElementById('girl-count');
-    const dateInput = document.getElementById('dateGuess');
-const dateDisplay = document.getElementById('dateDisplay');
-
-// Set default calendar view to February 2025 when the field is focused
-dateInput.addEventListener('focus', () => {
-  if (!dateInput.value) {
-    dateInput.value = '2025-02-01'; // Temporarily set default to February 1, 2025
+// Called on focus to set default to "2025-02-01" if empty
+  function defaultToFeb2025() {
+    const dateEl = document.getElementById('dateGuess');
+    if (!dateEl.value) {
+      dateEl.value = '2025-02-01';
+    }
   }
-});
 
-// Update the displayed formatted date when a value is selected
-dateInput.addEventListener('change', () => {
-  if (dateInput.value) {
-    const selectedDate = new Date(dateInput.value);
-    const options = { month: 'short', day: 'numeric' }; // Format: "Feb 23"
-    dateDisplay.textContent = selectedDate.toLocaleDateString('en-US', options);
-    dateInput.classList.add('has-value'); // Apply styling to show the date parts
-  } else {
-    dateDisplay.textContent = '';
-    dateInput.classList.remove('has-value'); // Hide the date parts
-  }
-});
-
-// Clear the temporary default if no selection is made
-dateInput.addEventListener('blur', () => {
-  if (dateInput.value === '2025-02-01') {
-    dateInput.value = ''; // Clear the default
-    dateDisplay.textContent = ''; // Clear the display
-    dateInput.classList.remove('has-value'); // Ensure styling is reset
-  }
-});
+  // Clear it again if user doesn't select anything
+  // so no date is displayed once they blur
+  document.getElementById('dateGuess').addEventListener('blur', (ev) => {
+    const dateEl = ev.target;
+    if (dateEl.value === '2025-02-01') {
+      dateEl.value = '';
+    }
+  });
 
     const liveTotalValue     = document.getElementById('live-total-value');
     const livePotentialGender= document.getElementById('live-potential-gender');
